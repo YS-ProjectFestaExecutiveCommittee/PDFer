@@ -16,7 +16,7 @@
     --surface: #ffffff;
   }
   body {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    font-family: 'Segoe UI', 'Meiryo', 'Hiragino Kaku Gothic ProN', sans-serif;
     background-color: var(--bg);
     color: #333;
     display: flex;
@@ -27,11 +27,11 @@
   }
   .container {
     background: var(--surface);
-    padding: 2rem;
+    padding: 2.5rem 2rem;
     border-radius: 12px;
-    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+    box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1);
     width: 90%;
-    max-width: 500px;
+    max-width: 550px;
     text-align: center;
   }
   h1 {
@@ -47,11 +47,13 @@
     font-size: 0.9rem;
     margin-bottom: 1.5rem;
     text-align: left;
+    line-height: 1.5;
   }
   .controls {
     display: flex;
-    gap: 10px;
+    gap: 15px;
     justify-content: center;
+    align-items: center;
     margin-bottom: 1.5rem;
   }
   input[type="number"] {
@@ -59,73 +61,87 @@
     width: 100px;
     border: 1px solid #cbd5e1;
     border-radius: 6px;
-    font-size: 1rem;
+    font-size: 1.1rem;
+    text-align: center;
   }
   button {
     background-color: var(--primary);
     color: white;
     border: none;
-    padding: 0.75rem 1.5rem;
-    font-size: 1rem;
+    padding: 0.85rem 1.5rem;
+    font-size: 1.05rem;
     font-weight: 600;
-    border-radius: 6px;
+    border-radius: 8px;
     cursor: pointer;
-    transition: background-color 0.2s;
+    transition: all 0.2s;
     width: 100%;
     margin-bottom: 10px;
+    box-shadow: 0 4px 6px -1px rgb(37 99 235 / 0.2);
   }
-  button:hover { background-color: var(--primary-hover); }
-  button:disabled { background-color: #94a3b8; cursor: not-allowed; }
+  button:hover:not(:disabled) { 
+    background-color: var(--primary-hover);
+    transform: translateY(-1px);
+  }
+  button:disabled { 
+    background-color: #cbd5e1; 
+    color: #64748b;
+    cursor: not-allowed; 
+    box-shadow: none;
+  }
   
-  .btn-all { background-color: #059669; }
-  .btn-all:hover { background-color: #047857; }
+  .btn-all { background-color: #059669; box-shadow: 0 4px 6px -1px rgb(5 150 105 / 0.2); }
+  .btn-all:hover:not(:disabled) { background-color: #047857; }
+  .btn-custom { background-color: #475569; box-shadow: 0 4px 6px -1px rgb(71 85 105 / 0.2); }
+  .btn-custom:hover:not(:disabled) { background-color: #334155; }
 
   #status {
     margin-top: 1rem;
     font-weight: bold;
     color: var(--primary);
     min-height: 1.5em;
+    font-size: 0.95rem;
   }
   .progress-bar-container {
     width: 100%;
     background-color: #e2e8f0;
-    border-radius: 4px;
-    margin-top: 10px;
+    border-radius: 6px;
+    margin-top: 15px;
     overflow: hidden;
     display: none;
   }
   .progress-bar {
-    height: 8px;
+    height: 10px;
     background-color: var(--primary);
     width: 0%;
-    transition: width 0.1s;
+    transition: width 0.2s ease-out;
   }
 </style>
 </head>
 <body>
 
 <div class="container">
-  <h1>🎟️ 投票用紙PDF 一括生成</h1>
+  <h1>🎟️ 投票用紙PDF 一括生成ツール</h1>
   
   <div class="warning">
     <b>【注意事項】</b><br>
-    ブラウザのメモリ上限を回避するため、1500枚のPDFは<b>300枚ずつ、5つのPDFファイルに分割してダウンロード</b>されます。<br>
-    ※生成中はブラウザを閉じないでください。
+    ・ブラウザのメモリ上限を回避するため、1500枚のPDFは<b>300枚ずつ、5つのファイルに分割</b>してダウンロードされます。<br>
+    ・初回生成時は日本語フォントの読み込みに数秒かかります。<br>
+    ・生成中はブラウザを閉じたり更新したりしないでください。
   </div>
 
   <button id="btn-auto-all" class="btn-all" onclick="generateAll1500()">
-    1〜1500まで全自動生成（推奨）
+    🚀 1〜1500番まで全自動生成（推奨）
   </button>
 
-  <hr style="margin: 20px 0; border: 0; border-top: 1px solid #e2e8f0;">
+  <hr style="margin: 25px 0; border: 0; border-top: 1px dashed #cbd5e1;">
   
-  <p style="font-size: 0.9rem; color: #64748b; margin-bottom: 10px;">または手動で範囲を指定して生成（最大300枚推奨）</p>
+  <p style="font-size: 0.9rem; color: #475569; margin-bottom: 10px; font-weight: bold;">または 手動で範囲を指定して生成（最大500枚まで）</p>
   <div class="controls">
     <input type="number" id="startId" value="1" min="1" max="1500">
-    <span style="line-height: 38px;">〜</span>
+    <span style="color: #64748b; font-weight: bold;">〜</span>
     <input type="number" id="endId" value="10" min="1" max="1500">
   </div>
-  <button id="btn-custom" onclick="generateCustomRange()">指定範囲のPDFを生成</button>
+  <button id="btn-custom" class="btn-custom" onclick="generateCustomRange()">指定範囲のPDFを生成</button>
 
   <div class="progress-bar-container" id="progress-container">
     <div class="progress-bar" id="progress-bar"></div>
@@ -134,12 +150,12 @@
 </div>
 
 <script>
-// 各部門のURL定義（?booth= はループ内で付与）
+// 各部門のURLと日本語名定義
 const DEPARTMENTS = [
-  { name: "GP Department", urlBase: "https://ys-projectfestaexecutivecommittee.github.io/QRV2026-GP/?booth=", x: 25, y: 70 },
-  { name: "UQ Department", urlBase: "https://ys-projectfestaexecutivecommittee.github.io/QRV2026-UQ/?booth=", x: 115, y: 70 },
-  { name: "PS Department", urlBase: "https://ys-projectfestaexecutivecommittee.github.io/QRV2026-PS/?booth=", x: 25, y: 175 },
-  { name: "DS Department", urlBase: "https://ys-projectfestaexecutivecommittee.github.io/QRV2026-DS/?booth=", x: 115, y: 175 }
+  { name: "🏆 優秀賞 (GP)", urlBase: "https://ys-projectfestaexecutivecommittee.github.io/QRV2026-GP/?booth=", x: 25, y: 70 },
+  { name: "💡 ユニーク賞 (UQ)", urlBase: "https://ys-projectfestaexecutivecommittee.github.io/QRV2026-UQ/?booth=", x: 115, y: 70 },
+  { name: "🎤 プレゼン力賞 (PS)", urlBase: "https://ys-projectfestaexecutivecommittee.github.io/QRV2026-PS/?booth=", x: 25, y: 175 },
+  { name: "🎨 デザイン賞 (DS)", urlBase: "https://ys-projectfestaexecutivecommittee.github.io/QRV2026-DS/?booth=", x: 115, y: 175 }
 ];
 
 const sleep = ms => new Promise(r => setTimeout(r, ms));
@@ -161,12 +177,47 @@ function lockButtons(locked) {
   document.getElementById('endId').disabled = locked;
 }
 
+// 日本語フォントを一度だけダウンロードしてキャッシュする
+let cachedFontBase64 = null;
+async function getJapaneseFont() {
+  if (cachedFontBase64) return cachedFontBase64;
+  updateStatus("PDF用日本語フォントをダウンロード中... (初回のみ)", 5);
+  try {
+    // Google FontsからSawarabi Gothic（軽量な日本語フォント）を取得
+    const url = 'https://raw.githubusercontent.com/google/fonts/main/ofl/sawarabigothic/SawarabiGothic-Regular.ttf';
+    const response = await fetch(url);
+    if (!response.ok) throw new Error("フォントの取得に失敗しました");
+    const buffer = await response.arrayBuffer();
+    
+    // ArrayBufferをBase64に変換（コールスタック超過を防ぐためチャンクで処理）
+    let binary = '';
+    const bytes = new Uint8Array(buffer);
+    const chunkSize = 8192;
+    for (let i = 0; i < bytes.length; i += chunkSize) {
+      binary += String.fromCharCode.apply(null, bytes.subarray(i, i + chunkSize));
+    }
+    cachedFontBase64 = window.btoa(binary);
+    return cachedFontBase64;
+  } catch (err) {
+    console.error(err);
+    throw new Error("日本語フォントの読み込みに失敗しました。インターネット接続を確認してください。");
+  }
+}
+
 // -----------------------------------------------------
 // PDF生成のメインロジック
 // -----------------------------------------------------
 async function generatePDF(start, end, fileSuffix = "") {
+  // フォントの取得
+  const fontBase64 = await getJapaneseFont();
+
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+  
+  // 日本語フォントをjsPDFに登録して適用
+  doc.addFileToVFS("SawarabiGothic-Regular.ttf", fontBase64);
+  doc.addFont("SawarabiGothic-Regular.ttf", "Sawarabi", "normal");
+  doc.setFont("Sawarabi", "normal");
   
   const totalPages = end - start + 1;
   let pageCount = 0;
@@ -176,57 +227,53 @@ async function generatePDF(start, end, fileSuffix = "") {
     if (pageCount > 0) doc.addPage();
     pageCount++;
 
-    // タイトル周り (英語表記で文字化け回避)
-    doc.setFontSize(28);
-    doc.setFont("helvetica", "bold");
-    doc.text(`Voting Ticket`, 105, 30, { align: "center" });
+    // --- タイトル周り ---
+    doc.setFontSize(30);
+    doc.text(`投 票 用 紙`, 105, 30, { align: "center" });
     
-    doc.setFontSize(16);
-    doc.setFont("helvetica", "normal");
-    doc.setTextColor(100, 100, 100);
-    doc.text(`Ticket ID : ${String(i).padStart(4, '0')}`, 105, 42, { align: "center" });
+    doc.setFontSize(18);
+    doc.setTextColor(80, 80, 80);
+    // ブースID（4桁ゼロ埋め）
+    doc.text(`ブースID : ${String(i).padStart(4, '0')}`, 105, 42, { align: "center" });
     
     doc.setFontSize(11);
-    doc.text("Please scan the QR code to vote for each department.", 105, 50, { align: "center" });
-    
     doc.setTextColor(0, 0, 0);
+    doc.text("各賞のQRコードをスマートフォンで読み取って投票してください。", 105, 52, { align: "center" });
 
-    // 4つの部門のQRコードを配置
+    // --- 4つの部門のQRコードを配置 ---
     for (const dept of DEPARTMENTS) {
       const url = dept.urlBase + i;
       
-      // QRコードを生成 (高解像度すぎるとメモリを食うため適度なサイズに)
+      // QRコードを生成
       const qr = new QRious({ value: url, size: 250, level: 'M' });
       const qrDataUrl = qr.toDataURL('image/jpeg');
       
       // 部門名
       doc.setFontSize(18);
-      doc.setFont("helvetica", "bold");
       doc.text(dept.name, dept.x + 35, dept.y - 5, { align: "center" });
       
       // QRコード画像 (70x70mm)
       doc.addImage(qrDataUrl, 'JPEG', dept.x, dept.y, 70, 70);
       
       // QRの下に小さく補足文字
-      doc.setFontSize(9);
-      doc.setFont("helvetica", "normal");
-      doc.setTextColor(120, 120, 120);
-      doc.text(`scan to vote (Booth ID: ${i})`, dept.x + 35, dept.y + 76, { align: "center" });
+      doc.setFontSize(10);
+      doc.setTextColor(100, 100, 100);
+      doc.text(`読み取って投票 (ID: ${i})`, dept.x + 35, dept.y + 76, { align: "center" });
       doc.setTextColor(0, 0, 0);
     }
 
     // 進捗の更新
     const pct = Math.floor((pageCount / totalPages) * 100);
-    updateStatus(`[${start} - ${end}] 生成中... ${pageCount} / ${totalPages} ページ`, pct);
+    updateStatus(`[ID: ${start} 〜 ${end}] 生成中... ${pageCount} / ${totalPages} 枚目`, pct);
 
-    // UIのフリーズを防ぐため、10ページごとに一瞬処理を休止
+    // UIのフリーズを防ぐため、10枚ごとに一瞬処理を休止
     if (pageCount % 10 === 0) {
       await sleep(10);
     }
   }
 
   // PDFの保存
-  const filename = `Voting_Tickets_${start}_to_${end}${fileSuffix}.pdf`;
+  const filename = `投票用紙_${String(start).padStart(4, '0')}_to_${String(end).padStart(4, '0')}${fileSuffix}.pdf`;
   updateStatus(`PDFを保存しています... (${filename})`, 100);
   doc.save(filename);
 }
@@ -239,11 +286,11 @@ async function generateAll1500() {
   
   // 300枚ずつ5バッチに分ける
   const batches = [
-    { s: 1, e: 300, name: "_Part1" },
-    { s: 301, e: 600, name: "_Part2" },
-    { s: 601, e: 900, name: "_Part3" },
-    { s: 901, e: 1200, name: "_Part4" },
-    { s: 1201, e: 1500, name: "_Part5" }
+    { s: 1, e: 300, name: "_1" },
+    { s: 301, e: 600, name: "_2" },
+    { s: 601, e: 900, name: "_3" },
+    { s: 901, e: 1200, name: "_4" },
+    { s: 1201, e: 1500, name: "_5" }
   ];
 
   try {
@@ -255,14 +302,14 @@ async function generateAll1500() {
       await generatePDF(b.s, b.e, b.name);
       
       if (i < batches.length - 1) {
-        updateStatus(`バッチ ${i+1} 完了。次のダウンロード準備中... (ブラウザのDL許可ダイアログが出た場合は許可してください)`, 100);
-        await sleep(3000); // 次の処理前に意図的に少し長めに待つ（クラッシュ防止）
+        updateStatus(`バッチ ${i+1} が完了しました。次のダウンロードを準備中... \n※ブラウザの「複数ファイルのダウンロード許可」が出た場合は許可してください。`, 100);
+        await sleep(3500); // 次の処理前に意図的に少し長めに待つ（クラッシュ防止）
       }
     }
-    updateStatus('🎉 全てのPDF（1500枚分）の生成が完了しました！', 100);
+    updateStatus('🎉 全ての投票用紙（1500枚）の生成が完了しました！', 100);
   } catch (error) {
     updateStatus(`エラーが発生しました: ${error.message}`);
-    alert("エラーが発生しました。ページを再読み込みして、手動で少しずつ生成してみてください。");
+    alert("エラーが発生しました。\n" + error.message);
   } finally {
     lockButtons(false);
   }
@@ -276,21 +323,22 @@ async function generateCustomRange() {
   const end = parseInt(document.getElementById('endId').value);
 
   if (isNaN(start) || isNaN(end) || start > end || start < 1 || end > 1500) {
-    alert("正しい数値を入力してください。(1〜1500)");
+    alert("正しい数値を入力してください。(1〜1500の範囲)");
     return;
   }
   
   if (end - start > 500) {
-    alert("メモリ不足によるエラーを防ぐため、一度に生成できるのは最大500枚までです。\n1500枚生成する場合は上の「全自動生成」ボタンをご利用ください。");
+    alert("メモリ不足によるクラッシュを防ぐため、手動設定で一度に生成できるのは最大500枚までです。\n1500枚すべて生成する場合は上の「全自動生成」ボタンをご利用ください。");
     return;
   }
 
   lockButtons(true);
   try {
     await generatePDF(start, end);
-    updateStatus(`🎉 ${start} から ${end} のPDF生成が完了しました！`, 100);
+    updateStatus(`🎉 指定範囲（${start} 〜 ${end}）のPDF生成が完了しました！`, 100);
   } catch (error) {
     updateStatus(`エラーが発生しました: ${error.message}`);
+    alert("エラーが発生しました。\n" + error.message);
   } finally {
     lockButtons(false);
   }
