@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>投票用紙 1500枚 一括生成ツール</title>
+<!-- PDF生成ライブラリ (jsPDF) -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<!-- QRコード生成ライブラリ (QRious) -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"></script>
+<style>
+  :root {
+    --primary: #2563eb;
+    --primary-hover: #1d4ed8;
+    --bg: #f8fafc;
+    --surface: #ffffff;
+  }
+  body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: var(--bg);
+    color: #333;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    margin: 0;
+  }
+  .container {
+    background: var(--surface);
+    padding: 2rem;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+    width: 90%;
+    max-width: 500px;
+    text-align: center;
+  }
+  h1 {
+    font-size: 1.5rem;
+    color: #0f172a;
+    margin-bottom: 1.5rem;
+  }
+  .warning {
+    background-color: #fef2f2;
+    color: #991b1b;
+    padding: 1rem;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    margin-bottom: 1.5rem;
+    text-align: left;
+  }
+  .controls {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    margin-bottom: 1.5rem;
+  }
+  input[type="number"] {
+    padding: 0.5rem;
+    width: 100px;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    font-size: 1rem;
+  }
+  button {
+    background-color: var(--primary);
+    color: white;
+    border: none;
+    padding: 0.75rem 1.5rem;
+    font-size: 1rem;
+    font-weight: 600;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    width: 100%;
+    margin-bottom: 10px;
+  }
+  button:hover { background-color: var(--primary-hover); }
+  button:disabled { background-color: #94a3b8; cursor: not-allowed; }
+  
+  .btn-all { background-color: #059669; }
+  .btn-all:hover { background-color: #047857; }
+
+  #status {
+    margin-top: 1rem;
+    font-weight: bold;
+    color: var(--primary);
+    min-height: 1.5em;
+  }
+  .progress-bar-container {
+    width: 100%;
+    background-color: #e2e8f0;
+    border-radius: 4px;
+    margin-top: 10px;
+    overflow: hidden;
+    display: none;
+  }
+  .progress-bar {
+    height: 8px;
+    background-color: var(--primary);
+    width: 0%;
+    transition: width 0.1s;
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <h1>🎟️ 投票用紙PDF 一括生成</h1>
+  
+  <div class="warning">
+    <b>【注意事項】</b><br>
+    ブラウザのメモリ上限を回避するため、1500枚のPDFは<b>300枚ずつ、5つのPDFファイルに分割してダウンロード</b>されます。<br>
+    ※生成中はブラウザを閉じないでください。
+  </div>
+
+  <button id="btn-auto-all" class="btn-all" onclick="generateAll1500()">
+    1〜1500まで全自動生成（推奨）
+  </button>
+
+  <hr style="margin: 20px 0; border: 0; border-top: 1px solid #e2e8f0;">
+  
+  <p style="font-size: 0.9rem; color: #64748b; margin-bottom: 10px;">または手動で範囲を指定して生成（最大300枚推奨）</p>
+  <div class="controls">
+    <input type="number" id="startId" value="1" min="1" max="1500">
+    <span style="line-height: 38px;">〜</span>
+    <input type="number" id="endId" value="10" min="1" max="1500">
+  </div>
+  <button id="btn-custom" onclick="generateCustomRange()">指定範囲のPDFを生成</button>
+
+  <div class="progress-bar-container" id="progress-container">
+    <div class="progress-bar" id="progress-bar"></div>
+  </div>
+  <div id="status"></div>
+</div>
+
+<script>
+// 各部門のURL定義（?booth= はループ内で付与）
+const DEPARTMENTS = [
+  { name: "GP Department", urlBase: "https://ys-projectfestaexecutivecommittee.github.io/QRV2026-GP/?booth=", x: 25, y: 70 },
+  { name: "UQ Department", urlBase: "https://ys-projectfestaexecutivecommittee.github.io/QRV2026-UQ/?booth=", x: 115, y: 70 },
+  { name: "PS Department", urlBase: "https://ys-projectfestaexecutivecommittee.github.io/QRV2026-PS/?booth=", x: 25, y: 175 },
+  { name: "DS Department", urlBase: "https://ys-projectfestaexecutivecommittee.github.io/QRV2026-DS/?booth=", x: 115, y: 175 }
+];
+
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+function updateStatus(text, progress = null) {
+  document.getElementById('status').innerText = text;
+  if (progress !== null) {
+    document.getElementById('progress-container').style.display = 'block';
+    document.getElementById('progress-bar').style.width = `${progress}%`;
+  } else {
+    document.getElementById('progress-container').style.display = 'none';
+  }
+}
+
+function lockButtons(locked) {
+  document.getElementById('btn-auto-all').disabled = locked;
+  document.getElementById('btn-custom').disabled = locked;
+  document.getElementById('startId').disabled = locked;
+  document.getElementById('endId').disabled = locked;
+}
+
+// -----------------------------------------------------
+// PDF生成のメインロジック
+// -----------------------------------------------------
+async function generatePDF(start, end, fileSuffix = "") {
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+  
+  const totalPages = end - start + 1;
+  let pageCount = 0;
+
+  for (let i = start; i <= end; i++) {
+    // 2ページ目以降はページを追加
+    if (pageCount > 0) doc.addPage();
+    pageCount++;
+
+    // タイトル周り (英語表記で文字化け回避)
+    doc.setFontSize(28);
+    doc.setFont("helvetica", "bold");
+    doc.text(`Voting Ticket`, 105, 30, { align: "center" });
+    
+    doc.setFontSize(16);
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(100, 100, 100);
+    doc.text(`Ticket ID : ${String(i).padStart(4, '0')}`, 105, 42, { align: "center" });
+    
+    doc.setFontSize(11);
+    doc.text("Please scan the QR code to vote for each department.", 105, 50, { align: "center" });
+    
+    doc.setTextColor(0, 0, 0);
+
+    // 4つの部門のQRコードを配置
+    for (const dept of DEPARTMENTS) {
+      const url = dept.urlBase + i;
+      
+      // QRコードを生成 (高解像度すぎるとメモリを食うため適度なサイズに)
+      const qr = new QRious({ value: url, size: 250, level: 'M' });
+      const qrDataUrl = qr.toDataURL('image/jpeg');
+      
+      // 部門名
+      doc.setFontSize(18);
+      doc.setFont("helvetica", "bold");
+      doc.text(dept.name, dept.x + 35, dept.y - 5, { align: "center" });
+      
+      // QRコード画像 (70x70mm)
+      doc.addImage(qrDataUrl, 'JPEG', dept.x, dept.y, 70, 70);
+      
+      // QRの下に小さく補足文字
+      doc.setFontSize(9);
+      doc.setFont("helvetica", "normal");
+      doc.setTextColor(120, 120, 120);
+      doc.text(`scan to vote (Booth ID: ${i})`, dept.x + 35, dept.y + 76, { align: "center" });
+      doc.setTextColor(0, 0, 0);
+    }
+
+    // 進捗の更新
+    const pct = Math.floor((pageCount / totalPages) * 100);
+    updateStatus(`[${start} - ${end}] 生成中... ${pageCount} / ${totalPages} ページ`, pct);
+
+    // UIのフリーズを防ぐため、10ページごとに一瞬処理を休止
+    if (pageCount % 10 === 0) {
+      await sleep(10);
+    }
+  }
+
+  // PDFの保存
+  const filename = `Voting_Tickets_${start}_to_${end}${fileSuffix}.pdf`;
+  updateStatus(`PDFを保存しています... (${filename})`, 100);
+  doc.save(filename);
+}
+
+// -----------------------------------------------------
+// 1500枚を自動で5分割して生成
+// -----------------------------------------------------
+async function generateAll1500() {
+  lockButtons(true);
+  
+  // 300枚ずつ5バッチに分ける
+  const batches = [
+    { s: 1, e: 300, name: "_Part1" },
+    { s: 301, e: 600, name: "_Part2" },
+    { s: 601, e: 900, name: "_Part3" },
+    { s: 901, e: 1200, name: "_Part4" },
+    { s: 1201, e: 1500, name: "_Part5" }
+  ];
+
+  try {
+    for (let i = 0; i < batches.length; i++) {
+      const b = batches[i];
+      updateStatus(`バッチ ${i+1}/5 の処理を開始します...`);
+      await sleep(1000); // UI更新とメモリ開放のための待機
+      
+      await generatePDF(b.s, b.e, b.name);
+      
+      if (i < batches.length - 1) {
+        updateStatus(`バッチ ${i+1} 完了。次のダウンロード準備中... (ブラウザのDL許可ダイアログが出た場合は許可してください)`, 100);
+        await sleep(3000); // 次の処理前に意図的に少し長めに待つ（クラッシュ防止）
+      }
+    }
+    updateStatus('🎉 全てのPDF（1500枚分）の生成が完了しました！', 100);
+  } catch (error) {
+    updateStatus(`エラーが発生しました: ${error.message}`);
+    alert("エラーが発生しました。ページを再読み込みして、手動で少しずつ生成してみてください。");
+  } finally {
+    lockButtons(false);
+  }
+}
+
+// -----------------------------------------------------
+// 範囲指定での生成
+// -----------------------------------------------------
+async function generateCustomRange() {
+  const start = parseInt(document.getElementById('startId').value);
+  const end = parseInt(document.getElementById('endId').value);
+
+  if (isNaN(start) || isNaN(end) || start > end || start < 1 || end > 1500) {
+    alert("正しい数値を入力してください。(1〜1500)");
+    return;
+  }
+  
+  if (end - start > 500) {
+    alert("メモリ不足によるエラーを防ぐため、一度に生成できるのは最大500枚までです。\n1500枚生成する場合は上の「全自動生成」ボタンをご利用ください。");
+    return;
+  }
+
+  lockButtons(true);
+  try {
+    await generatePDF(start, end);
+    updateStatus(`🎉 ${start} から ${end} のPDF生成が完了しました！`, 100);
+  } catch (error) {
+    updateStatus(`エラーが発生しました: ${error.message}`);
+  } finally {
+    lockButtons(false);
+  }
+}
+</script>
+
+</body>
+</html>
