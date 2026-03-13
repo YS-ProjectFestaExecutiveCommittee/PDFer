@@ -94,6 +94,76 @@
   .btn-custom { background-color: #475569; box-shadow: 0 4px 6px -1px rgb(71 85 105 / 0.2); }
   .btn-custom:hover:not(:disabled) { background-color: #334155; }
 
+  .url-settings {
+    background-color: #f1f5f9;
+    padding: 1rem;
+    border-radius: 8px;
+    margin-bottom: 1.5rem;
+    text-align: left;
+  }
+  .url-settings h3 {
+    font-size: 1rem;
+    margin-top: 0;
+    margin-bottom: 1rem;
+    color: #334155;
+    border-bottom: 2px solid #e2e8f0;
+    padding-bottom: 0.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .setting-controls {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 15px;
+  }
+  .setting-controls select {
+    padding: 0.4rem;
+    border-radius: 4px;
+    border: 1px solid #cbd5e1;
+    font-size: 0.95rem;
+  }
+  .dept-group {
+    background: #ffffff;
+    padding: 12px;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    margin-bottom: 10px;
+  }
+  .dept-group:last-child {
+    margin-bottom: 0;
+  }
+  .dept-header {
+    font-size: 0.85rem;
+    font-weight: bold;
+    color: var(--primary);
+    margin-bottom: 8px;
+  }
+  .input-row {
+    display: flex;
+    align-items: center;
+    margin-bottom: 8px;
+    gap: 10px;
+  }
+  .input-row:last-child {
+    margin-bottom: 0;
+  }
+  .input-row label {
+    flex: 0 0 45px;
+    font-size: 0.85rem;
+    font-weight: bold;
+    color: #475569;
+    margin: 0;
+  }
+  .input-row input[type="text"] {
+    flex: 1;
+    padding: 0.4rem 0.5rem;
+    border: 1px solid #cbd5e1;
+    border-radius: 4px;
+    font-size: 0.85rem;
+  }
+
   #status {
     margin-top: 1rem;
     font-weight: bold;
@@ -129,6 +199,53 @@
     ・生成中はブラウザを閉じたり更新したりしないでください。
   </div>
 
+  <div class="url-settings">
+    <h3>🔗 賞の項目設定 <span style="font-size:0.8rem; font-weight:normal; color:#64748b;">(URL末尾にブースIDが自動で付きます)</span></h3>
+    
+    <div class="setting-controls">
+      <label style="font-size: 0.9rem; font-weight: bold; color: #334155;">1ページに出力する数:</label>
+      <select id="qr-count" onchange="updateDeptVisibility()">
+        <option value="4" selected>4個</option>
+        <option value="5">5個</option>
+        <option value="6">6個</option>
+      </select>
+    </div>
+
+    <div id="dept-list">
+      <!-- 項目の入力欄（最大6個まで用意） -->
+      <div class="dept-group" id="dept-group-1">
+        <div class="dept-header">賞 1</div>
+        <div class="input-row"><label>名前:</label><input type="text" id="name-1" value="🏆 優秀賞 (GP)"></div>
+        <div class="input-row"><label>URL:</label><input type="text" id="url-1" value="https://ys-projectfestaexecutivecommittee.github.io/QRV2026-GP/?booth="></div>
+      </div>
+      <div class="dept-group" id="dept-group-2">
+        <div class="dept-header">賞 2</div>
+        <div class="input-row"><label>名前:</label><input type="text" id="name-2" value="💡 ユニーク賞 (UQ)"></div>
+        <div class="input-row"><label>URL:</label><input type="text" id="url-2" value="https://ys-projectfestaexecutivecommittee.github.io/QRV2026-UQ/?booth="></div>
+      </div>
+      <div class="dept-group" id="dept-group-3">
+        <div class="dept-header">賞 3</div>
+        <div class="input-row"><label>名前:</label><input type="text" id="name-3" value="🎤 プレゼン力賞 (PS)"></div>
+        <div class="input-row"><label>URL:</label><input type="text" id="url-3" value="https://ys-projectfestaexecutivecommittee.github.io/QRV2026-PS/?booth="></div>
+      </div>
+      <div class="dept-group" id="dept-group-4">
+        <div class="dept-header">賞 4</div>
+        <div class="input-row"><label>名前:</label><input type="text" id="name-4" value="🎨 デザイン賞 (DS)"></div>
+        <div class="input-row"><label>URL:</label><input type="text" id="url-4" value="https://ys-projectfestaexecutivecommittee.github.io/QRV2026-DS/?booth="></div>
+      </div>
+      <div class="dept-group" id="dept-group-5" style="display: none;">
+        <div class="dept-header">賞 5</div>
+        <div class="input-row"><label>名前:</label><input type="text" id="name-5" value="🌟 特別賞 (SP)"></div>
+        <div class="input-row"><label>URL:</label><input type="text" id="url-5" value="https://ys-projectfestaexecutivecommittee.github.io/QRV2026-SP/?booth="></div>
+      </div>
+      <div class="dept-group" id="dept-group-6" style="display: none;">
+        <div class="dept-header">賞 6</div>
+        <div class="input-row"><label>名前:</label><input type="text" id="name-6" value="🤝 参加賞 (PA)"></div>
+        <div class="input-row"><label>URL:</label><input type="text" id="url-6" value="https://ys-projectfestaexecutivecommittee.github.io/QRV2026-PA/?booth="></div>
+      </div>
+    </div>
+  </div>
+
   <button id="btn-auto-all" class="btn-all" onclick="generateAll1500()">
     🚀 1〜1500番まで全自動生成（推奨）
   </button>
@@ -150,13 +267,31 @@
 </div>
 
 <script>
-// 各部門のURLと日本語名定義
-const DEPARTMENTS = [
-  { name: "🏆 優秀賞 (GP)", urlBase: "https://ys-projectfestaexecutivecommittee.github.io/QRV2026-GP/?booth=", x: 25, y: 70 },
-  { name: "💡 ユニーク賞 (UQ)", urlBase: "https://ys-projectfestaexecutivecommittee.github.io/QRV2026-UQ/?booth=", x: 115, y: 70 },
-  { name: "🎤 プレゼン力賞 (PS)", urlBase: "https://ys-projectfestaexecutivecommittee.github.io/QRV2026-PS/?booth=", x: 25, y: 175 },
-  { name: "🎨 デザイン賞 (DS)", urlBase: "https://ys-projectfestaexecutivecommittee.github.io/QRV2026-DS/?booth=", x: 115, y: 175 }
-];
+// 選択した数に応じて入力欄の表示/非表示を切り替える
+function updateDeptVisibility() {
+  const count = parseInt(document.getElementById('qr-count').value);
+  for (let i = 1; i <= 6; i++) {
+    const group = document.getElementById(`dept-group-${i}`);
+    if (i <= count) {
+      group.style.display = 'block';
+    } else {
+      group.style.display = 'none';
+    }
+  }
+}
+
+// 画面入力から有効な部門のデータを取得する
+function getDepartments() {
+  const count = parseInt(document.getElementById('qr-count').value);
+  const depts = [];
+  for (let i = 1; i <= count; i++) {
+    depts.push({
+      name: document.getElementById(`name-${i}`).value,
+      urlBase: document.getElementById(`url-${i}`).value
+    });
+  }
+  return depts;
+}
 
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 
@@ -175,6 +310,11 @@ function lockButtons(locked) {
   document.getElementById('btn-custom').disabled = locked;
   document.getElementById('startId').disabled = locked;
   document.getElementById('endId').disabled = locked;
+  document.getElementById('qr-count').disabled = locked;
+  for (let i = 1; i <= 6; i++) {
+    document.getElementById(`name-${i}`).disabled = locked;
+    document.getElementById(`url-${i}`).disabled = locked;
+  }
 }
 
 // 日本語フォントを一度だけダウンロードしてキャッシュする
@@ -240,27 +380,44 @@ async function generatePDF(start, end, fileSuffix = "") {
     doc.setTextColor(0, 0, 0);
     doc.text("各賞のQRコードをスマートフォンで読み取って投票してください。", 105, 52, { align: "center" });
 
-    // --- 4つの部門のQRコードを配置 ---
-    for (const dept of DEPARTMENTS) {
+    // --- 部門のQRコードを配置 ---
+    const departments = getDepartments();
+    const rowsCount = Math.ceil(departments.length / 2); // 4個なら2行、5〜6個なら3行
+    
+    // 行数に合わせてレイアウトパラメータを調整
+    const qrSize = rowsCount === 2 ? 70 : 55;   // QRコードのサイズ
+    const startY = rowsCount === 2 ? 70 : 60;   // 1行目の開始Y座標
+    const rowPitch = rowsCount === 2 ? 105 : 78; // 次の行までの距離
+    const nameFontSize = rowsCount === 2 ? 18 : 16; // 賞の名前のフォントサイズ
+
+    departments.forEach((dept, index) => {
+      const col = index % 2; // 0 (左) or 1 (右)
+      const row = Math.floor(index / 2); // 0行目, 1行目, 2行目
+      
+      // X座標の基準位置（左列の中心は52.5mm、右列の中心は157.5mm）
+      const centerX = col === 0 ? 52.5 : 157.5;
+      const x = centerX - (qrSize / 2);
+      const y = startY + (row * rowPitch);
+
       const url = dept.urlBase + i;
       
       // QRコードを生成
       const qr = new QRious({ value: url, size: 250, level: 'M' });
       const qrDataUrl = qr.toDataURL('image/jpeg');
       
-      // 部門名
-      doc.setFontSize(18);
-      doc.text(dept.name, dept.x + 35, dept.y - 5, { align: "center" });
+      // 部門名（中央揃え）
+      doc.setFontSize(nameFontSize);
+      doc.text(dept.name, centerX, y - 5, { align: "center" });
       
-      // QRコード画像 (70x70mm)
-      doc.addImage(qrDataUrl, 'JPEG', dept.x, dept.y, 70, 70);
+      // QRコード画像
+      doc.addImage(qrDataUrl, 'JPEG', x, y, qrSize, qrSize);
       
-      // QRの下に小さく補足文字
+      // QRの下に小さく補足文字（中央揃え）
       doc.setFontSize(10);
       doc.setTextColor(100, 100, 100);
-      doc.text(`読み取って投票 (ID: ${i})`, dept.x + 35, dept.y + 76, { align: "center" });
+      doc.text(`読み取って投票 (ID: ${i})`, centerX, y + qrSize + 6, { align: "center" });
       doc.setTextColor(0, 0, 0);
-    }
+    });
 
     // 進捗の更新
     const pct = Math.floor((pageCount / totalPages) * 100);
