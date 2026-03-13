@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>投票用紙 1500枚 一括生成ツール</title>
+<title>投票用紙 一括生成ツール</title>
 <!-- PDF生成ライブラリ (jsPDF) -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <!-- QRコード生成ライブラリ (QRious) -->
@@ -51,10 +51,10 @@
   }
   .controls {
     display: flex;
-    gap: 15px;
+    gap: 10px;
     justify-content: center;
     align-items: center;
-    margin-bottom: 1.5rem;
+    margin-bottom: 1rem;
   }
   input[type="number"] {
     padding: 0.5rem;
@@ -194,13 +194,13 @@
   
   <div class="warning">
     <b>【注意事項】</b><br>
-    ・ブラウザのメモリ上限を回避するため、1500枚のPDFは<b>300枚ずつ、5つのファイルに分割</b>してダウンロードされます。<br>
+    ・ブラウザのメモリ上限を回避するため、大量のPDFを生成する場合は<b>300枚ずつ複数のファイルに分割</b>してダウンロードされます。<br>
     ・初回生成時は日本語フォントの読み込みに数秒かかります。<br>
     ・生成中はブラウザを閉じたり更新したりしないでください。
   </div>
 
   <div class="url-settings">
-    <h3>🔗 賞の項目設定 <span style="font-size:0.8rem; font-weight:normal; color:#64748b;">(URL末尾にブースIDが自動で付きます)</span></h3>
+    <h3>🔗 賞の項目設定 <span style="font-size:0.8rem; font-weight:normal; color:#64748b;">(URL末尾にIDが付きます)</span></h3>
     
     <div class="setting-controls">
       <label style="font-size: 0.9rem; font-weight: bold; color: #334155;">1ページに出力する数:</label>
@@ -246,17 +246,22 @@
     </div>
   </div>
 
-  <button id="btn-auto-all" class="btn-all" onclick="generateAll1500()">
-    🚀 1〜1500番まで全自動生成（推奨）
+  <div class="controls">
+    <span style="font-weight: bold; color: #334155;">総部数:</span>
+    <input type="number" id="totalCopies" value="100" min="1">
+    <span style="font-weight: bold; color: #334155;">部</span>
+  </div>
+  <button id="btn-auto-all" class="btn-all" onclick="generateAuto()">
+    🚀 1〜指定部数まで一括自動生成
   </button>
 
   <hr style="margin: 25px 0; border: 0; border-top: 1px dashed #cbd5e1;">
   
   <p style="font-size: 0.9rem; color: #475569; margin-bottom: 10px; font-weight: bold;">または 手動で範囲を指定して生成（最大500枚まで）</p>
   <div class="controls">
-    <input type="number" id="startId" value="1" min="1" max="1500">
+    <input type="number" id="startId" value="1" min="1">
     <span style="color: #64748b; font-weight: bold;">〜</span>
-    <input type="number" id="endId" value="10" min="1" max="1500">
+    <input type="number" id="endId" value="10" min="1">
   </div>
   <button id="btn-custom" class="btn-custom" onclick="generateCustomRange()">指定範囲のPDFを生成</button>
 
@@ -308,6 +313,7 @@ function updateStatus(text, progress = null) {
 function lockButtons(locked) {
   document.getElementById('btn-auto-all').disabled = locked;
   document.getElementById('btn-custom').disabled = locked;
+  document.getElementById('totalCopies').disabled = locked;
   document.getElementById('startId').disabled = locked;
   document.getElementById('endId').disabled = locked;
   document.getElementById('qr-count').disabled = locked;
@@ -323,13 +329,11 @@ async function getJapaneseFont() {
   if (cachedFontBase64) return cachedFontBase64;
   updateStatus("PDF用日本語フォントをダウンロード中... (初回のみ)", 5);
   try {
-    // Google FontsからSawarabi Gothic（軽量な日本語フォント）を取得
     const url = 'https://raw.githubusercontent.com/google/fonts/main/ofl/sawarabigothic/SawarabiGothic-Regular.ttf';
     const response = await fetch(url);
     if (!response.ok) throw new Error("フォントの取得に失敗しました");
     const buffer = await response.arrayBuffer();
     
-    // ArrayBufferをBase64に変換（コールスタック超過を防ぐためチャンクで処理）
     let binary = '';
     const bytes = new Uint8Array(buffer);
     const chunkSize = 8192;
@@ -354,7 +358,7 @@ async function generatePDF(start, end, fileSuffix = "") {
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
   
-  // 日本語フォントをjsPDFに登録して適用
+  // 日本語フォントの適用
   doc.addFileToVFS("SawarabiGothic-Regular.ttf", fontBase64);
   doc.addFont("SawarabiGothic-Regular.ttf", "Sawarabi", "normal");
   doc.setFont("Sawarabi", "normal");
@@ -363,39 +367,55 @@ async function generatePDF(start, end, fileSuffix = "") {
   let pageCount = 0;
 
   for (let i = start; i <= end; i++) {
-    // 2ページ目以降はページを追加
     if (pageCount > 0) doc.addPage();
     pageCount++;
 
     // --- タイトル周り ---
-    doc.setFontSize(30);
-    doc.text(`投 票 用 紙`, 105, 30, { align: "center" });
+    doc.setFontSize(26);
+    doc.text(`投 票 用 紙`, 105, 18, { align: "center" });
     
-    doc.setFontSize(18);
+    // ブースID（右上に配置）
+    doc.setFontSize(14);
     doc.setTextColor(80, 80, 80);
-    // ブースID（4桁ゼロ埋め）
-    doc.text(`ブースID : ${String(i).padStart(4, '0')}`, 105, 42, { align: "center" });
+    doc.text(`ブースID : ${String(i).padStart(4, '0')}`, 190, 18, { align: "right" });
+    
+    // --- 発表者・グループ名記入欄（大きく目立つように） ---
+    doc.setDrawColor(150, 150, 150);
+    doc.setLineWidth(0.5);
+    // x: 20, y: 24, width: 170, height: 16
+    doc.rect(20, 24, 170, 16);
     
     doc.setFontSize(11);
+    doc.setTextColor(100, 100, 100);
+    doc.text("発表者・グループ名 :", 23, 34);
+
+    // --- 説明文 ---
+    doc.setFontSize(10);
     doc.setTextColor(0, 0, 0);
-    doc.text("各賞のQRコードをスマートフォンで読み取って投票してください。", 105, 52, { align: "center" });
+    doc.text("各賞のQRコードをスマートフォンで読み取って投票してください。", 105, 48, { align: "center" });
 
     // --- 部門のQRコードを配置 ---
     const departments = getDepartments();
-    const rowsCount = Math.ceil(departments.length / 2); // 4個なら2行、5〜6個なら3行
+    const count = departments.length;
+    const rowsCount = Math.ceil(count / 2); // 4個なら2行、5〜6個なら3行
     
-    // 行数に合わせてレイアウトパラメータを調整
-    const qrSize = rowsCount === 2 ? 70 : 55;   // QRコードのサイズ
-    const startY = rowsCount === 2 ? 70 : 60;   // 1行目の開始Y座標
-    const rowPitch = rowsCount === 2 ? 105 : 78; // 次の行までの距離
-    const nameFontSize = rowsCount === 2 ? 18 : 16; // 賞の名前のフォントサイズ
+    // 文字が被らないよう、上部の余白を詰め、QRコードのサイズと配置を再計算
+    const qrSize = rowsCount === 2 ? 72 : 52;   // QRコードのサイズ
+    const startY = rowsCount === 2 ? 72 : 68;   // 1行目のQR画像開始Y座標
+    const rowPitch = rowsCount === 2 ? 110 : 76; // 次の行までの距離
+    const nameFontSize = rowsCount === 2 ? 18 : 15; // 賞の名前のフォントサイズ
 
     departments.forEach((dept, index) => {
-      const col = index % 2; // 0 (左) or 1 (右)
-      const row = Math.floor(index / 2); // 0行目, 1行目, 2行目
+      // 5個設定時の最後（5個目）は中央に配置
+      let centerX;
+      if (count === 5 && index === 4) {
+        centerX = 105;
+      } else {
+        const col = index % 2; 
+        centerX = col === 0 ? 55 : 155;
+      }
       
-      // X座標の基準位置（左列の中心は52.5mm、右列の中心は157.5mm）
-      const centerX = col === 0 ? 52.5 : 157.5;
+      const row = Math.floor(index / 2); 
       const x = centerX - (qrSize / 2);
       const y = startY + (row * rowPitch);
 
@@ -405,17 +425,17 @@ async function generatePDF(start, end, fileSuffix = "") {
       const qr = new QRious({ value: url, size: 250, level: 'M' });
       const qrDataUrl = qr.toDataURL('image/jpeg');
       
-      // 部門名（中央揃え）
+      // 部門名
       doc.setFontSize(nameFontSize);
-      doc.text(dept.name, centerX, y - 5, { align: "center" });
+      doc.text(dept.name, centerX, y - 6, { align: "center" });
       
       // QRコード画像
       doc.addImage(qrDataUrl, 'JPEG', x, y, qrSize, qrSize);
       
-      // QRの下に小さく補足文字（中央揃え）
-      doc.setFontSize(10);
+      // QRの下の補足文字
+      doc.setFontSize(9);
       doc.setTextColor(100, 100, 100);
-      doc.text(`読み取って投票 (ID: ${i})`, centerX, y + qrSize + 6, { align: "center" });
+      doc.text(`読み取って投票 (ID: ${i})`, centerX, y + qrSize + 5, { align: "center" });
       doc.setTextColor(0, 0, 0);
     });
 
@@ -423,10 +443,7 @@ async function generatePDF(start, end, fileSuffix = "") {
     const pct = Math.floor((pageCount / totalPages) * 100);
     updateStatus(`[ID: ${start} 〜 ${end}] 生成中... ${pageCount} / ${totalPages} 枚目`, pct);
 
-    // UIのフリーズを防ぐため、10枚ごとに一瞬処理を休止
-    if (pageCount % 10 === 0) {
-      await sleep(10);
-    }
+    if (pageCount % 10 === 0) await sleep(10);
   }
 
   // PDFの保存
@@ -436,34 +453,38 @@ async function generatePDF(start, end, fileSuffix = "") {
 }
 
 // -----------------------------------------------------
-// 1500枚を自動で5分割して生成
+// 指定部数を自動で分割して生成
 // -----------------------------------------------------
-async function generateAll1500() {
+async function generateAuto() {
+  const total = parseInt(document.getElementById('totalCopies').value);
+  if (isNaN(total) || total < 1) {
+    alert("正しい総部数を入力してください。");
+    return;
+  }
+
   lockButtons(true);
   
-  // 300枚ずつ5バッチに分ける
-  const batches = [
-    { s: 1, e: 300, name: "_1" },
-    { s: 301, e: 600, name: "_2" },
-    { s: 601, e: 900, name: "_3" },
-    { s: 901, e: 1200, name: "_4" },
-    { s: 1201, e: 1500, name: "_5" }
-  ];
+  // 300枚ずつに分割してバッチ処理を行う
+  const batchSize = 300;
+  const numBatches = Math.ceil(total / batchSize);
 
   try {
-    for (let i = 0; i < batches.length; i++) {
-      const b = batches[i];
-      updateStatus(`バッチ ${i+1}/5 の処理を開始します...`);
-      await sleep(1000); // UI更新とメモリ開放のための待機
+    for (let i = 0; i < numBatches; i++) {
+      const start = i * batchSize + 1;
+      const end = Math.min((i + 1) * batchSize, total);
+      const suffix = numBatches > 1 ? `_${i + 1}` : ""; // 分割された場合のみ末尾に_1などをつける
+
+      updateStatus(`バッチ ${i+1}/${numBatches} の処理を開始します... (${start}番 〜 ${end}番)`);
+      await sleep(1000); 
       
-      await generatePDF(b.s, b.e, b.name);
+      await generatePDF(start, end, suffix);
       
-      if (i < batches.length - 1) {
+      if (i < numBatches - 1) {
         updateStatus(`バッチ ${i+1} が完了しました。次のダウンロードを準備中... \n※ブラウザの「複数ファイルのダウンロード許可」が出た場合は許可してください。`, 100);
-        await sleep(3500); // 次の処理前に意図的に少し長めに待つ（クラッシュ防止）
+        await sleep(3500); 
       }
     }
-    updateStatus('🎉 全ての投票用紙（1500枚）の生成が完了しました！', 100);
+    updateStatus(`🎉 全ての投票用紙（計 ${total} 枚）の生成が完了しました！`, 100);
   } catch (error) {
     updateStatus(`エラーが発生しました: ${error.message}`);
     alert("エラーが発生しました。\n" + error.message);
@@ -479,13 +500,13 @@ async function generateCustomRange() {
   const start = parseInt(document.getElementById('startId').value);
   const end = parseInt(document.getElementById('endId').value);
 
-  if (isNaN(start) || isNaN(end) || start > end || start < 1 || end > 1500) {
-    alert("正しい数値を入力してください。(1〜1500の範囲)");
+  if (isNaN(start) || isNaN(end) || start > end || start < 1) {
+    alert("正しい数値を入力してください。");
     return;
   }
   
-  if (end - start > 500) {
-    alert("メモリ不足によるクラッシュを防ぐため、手動設定で一度に生成できるのは最大500枚までです。\n1500枚すべて生成する場合は上の「全自動生成」ボタンをご利用ください。");
+  if (end - start >= 500) {
+    alert("メモリ不足によるクラッシュを防ぐため、手動設定で一度に生成できるのは最大500枚までです。\n大量に生成する場合は上の「一括自動生成」ボタンをご利用ください。");
     return;
   }
 
